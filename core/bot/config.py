@@ -18,16 +18,15 @@ def _require(name: str) -> str:
 @dataclass(frozen=True, slots=True)
 class Settings:
     bot_token: str
+    telegram_api_base: str
     ydb_endpoint: str
     ydb_database: str
-    webhook_secret: str | None
 
     @classmethod
     def from_env(cls) -> Settings:
-        secret = os.getenv("WEBHOOK_SECRET", "").strip()
         return cls(
             bot_token=_require("BOT_TOKEN"),
+            telegram_api_base=_require("TELEGRAM_API_BASE"),
             ydb_endpoint=_require("YDB_ENDPOINT"),
             ydb_database=_require("YDB_DATABASE"),
-            webhook_secret=secret or None,
         )

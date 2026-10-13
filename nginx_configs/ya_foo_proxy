@@ -1,0 +1,45 @@
+server {
+    listen 443 ssl;
+    server_name <server_domen>;
+
+    ssl_certificate     /etc/letsencrypt/live/<server_domen>/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/<server_domen>/privkey.pem;
+
+    proxy_http_version 1.1;
+
+    # Динамическое DNS-разрешение адреса upstream.
+    resolver 77.88.8.8 77.88.8.1 valid=300s ipv6=off;
+    resolver_timeout 10s;
+
+    location /foo {
+        set $upstream_host <ya_foo_host>;
+
+        # $request_uri сохраняет исходные путь и query-параметры без изменений.
+        proxy_pass https://$upstream_host$request_uri;
+
+        proxy_ssl_server_name on;
+        proxy_ssl_name $upstream_host;
+
+        proxy_set_header Host $upstream_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    location /tg/ {
+    	set $telegram_host api.telegram.org;
+
+    	# Убирает префикс /tg/, query-параметры сохраняются.
+    	rewrite ^/tg/(.*)$ /$1 break;
+
+    	proxy_pass https://$telegram_host$uri$is_args$args;
+
+    	proxy_ssl_server_name on;
+    	proxy_ssl_name $telegram_host;
+
+    	proxy_set_header Host $telegram_host;
+    	proxy_set_header X-Real-IP $remote_addr;
+    	proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    	proxy_set_header X-Forwarded-Proto https;
+    }
+}

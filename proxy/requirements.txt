@@ -1,0 +1,1 @@
+# Proxy использует только stdlib; файл нужен Cloud Functions.
