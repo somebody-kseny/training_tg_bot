@@ -8,4 +8,6 @@ __pycache__/
 .idea/
 .vscode/
 *.zip
+build/
 .cursor/
+authorized_key.json

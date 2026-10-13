@@ -1,0 +1,17 @@
+[Unit]
+Description=trens-bot core (Telegram webhook)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/trens-bot/core
+EnvironmentFile=/opt/trens-bot/.env
+ExecStart=/opt/trens-bot/core/.venv/bin/python -m bot
+Restart=always
+RestartSec=3
+User=trens
+Group=trens
+
+[Install]
+WantedBy=multi-user.target

@@ -1,13 +1,20 @@
 from __future__ import annotations
 
 import logging
+import socket
 
 from aiogram import Bot, Dispatcher
+from aiogram.client.session.aiohttp import AiohttpSession
+from aiogram.client.telegram import TelegramAPIServer
 
+from bot.cardio import router as cardio_router
+from bot.climb import router as climb_router
 from bot.config import Settings
 from bot.db import YdbClient, YdbStorage
+from bot.delete import router as delete_router
 from bot.handlers import router as start_router
-from bot.middlewares import DbMiddleware
+from bot.last import router as last_router
+from bot.middlewares import DbMiddleware, DeleteReadyOnCommandMiddleware
 
 logger = logging.getLogger(__name__)
 
@@ -33,9 +40,18 @@ async def get_runtime() -> tuple[Bot, Dispatcher]:
     _ydb = YdbClient(settings)
     await _ydb.connect()
 
-    _bot = Bot(token=settings.bot_token)
+    api = TelegramAPIServer.from_base(settings.telegram_api_base)
+    session = AiohttpSession(api=api)
+    session._connector_init["family"] = socket.AF_INET
+    _bot = Bot(token=settings.bot_token, session=session)
+    logger.info("Bot API base: %s", settings.telegram_api_base)
     _dispatcher = Dispatcher(storage=YdbStorage(_ydb))
     _dispatcher.update.middleware(DbMiddleware(_ydb))
+    _dispatcher.message.middleware(DeleteReadyOnCommandMiddleware())
+    _dispatcher.include_router(climb_router)
+    _dispatcher.include_router(cardio_router)
+    _dispatcher.include_router(last_router)
+    _dispatcher.include_router(delete_router)
     _dispatcher.include_router(start_router)
     logger.info("Бот и диспетчер инициализированы")
     return _bot, _dispatcher
